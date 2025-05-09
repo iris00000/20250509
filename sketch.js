@@ -8,6 +8,7 @@ let circleX, circleY; // 圓的初始位置
 let circleRadius = 50; // 圓的半徑
 let isDragging = false; // 是否正在拖動圓
 let trail = []; // 用於存儲圓心的軌跡
+let currentColor = null; // 當前軌跡的顏色
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -39,14 +40,16 @@ function draw() {
   image(video, 0, 0);
 
   // 繪製圓心的軌跡
-  stroke(255, 0, 0); // 紅色線條
-  strokeWeight(2);
   noFill();
-  beginShape();
-  for (let point of trail) {
-    vertex(point.x, point.y);
+  strokeWeight(10);
+  for (let segment of trail) {
+    stroke(segment.color);
+    beginShape();
+    for (let point of segment.points) {
+      vertex(point.x, point.y);
+    }
+    endShape();
   }
-  endShape();
 
   // 繪製圓
   fill(0, 0, 255, 150); // 半透明藍色
@@ -105,17 +108,27 @@ function draw() {
 
           // 設置拖動狀態並記錄軌跡
           isDragging = true;
-          trail.push({ x: circleX, y: circleY });
+
+          // 設定軌跡顏色
+          if (hand.handedness == "Left") {
+            currentColor = "green";
+          } else {
+            currentColor = "red";
+          }
+
+          // 如果當前軌跡段不存在，新增一段
+          if (trail.length === 0 || trail[trail.length - 1].color !== currentColor) {
+            trail.push({ color: currentColor, points: [] });
+          }
+
+          // 記錄當前圓心位置
+          trail[trail.length - 1].points.push({ x: circleX, y: circleY });
         } else {
           // 如果手指鬆開，停止拖動
           isDragging = false;
+          currentColor = null;
         }
       }
     }
-  }
-
-  // 如果手指鬆開，清空軌跡
-  if (!isDragging) {
-    trail = [];
   }
 }
